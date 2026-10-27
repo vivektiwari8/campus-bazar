@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Paste this into Firebase console > Firestore Database > Rules, then Publish.
+// The college email domain is set to its.edu.in below (add more domains
+// inside the brackets if students use more than one).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Signed in with a verified email from an allowed college domain.
+    function isStudent() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.split('@')[1] in ['its.edu.in'];
+    }
+
+    function validListing(d) {
+      return d.keys().hasOnly(['title', 'price', 'category', 'condition', 'hostel',
+                               'description', 'sellerName', 'sellerId', 'contact',
+                               'images', 'createdAt', 'sold'])
+        && d.keys().hasAll(['title', 'price', 'category', 'condition', 'hostel',
+                            'description', 'sellerName', 'sellerId', 'contact',
+                            'images', 'createdAt', 'sold'])
+        && d.title is string && d.title.size() >= 3 && d.title.size() <= 80
+        && d.price is int && d.price >= 0 && d.price <= 1000000
+        && d.category in ['books', 'electronics', 'cycles', 'hostel', 'lab',
+                          'furniture', 'clothing', 'other']
+        && d.condition in ['Like new', 'Good', 'Fair', 'Needs repair']
+        && d.hostel is string && d.hostel.size() <= 40
+        && d.description is string && d.description.size() <= 400
+        && d.sellerName is string && d.sellerName.size() >= 2 && d.sellerName.size() <= 40
+        && d.contact is string && d.contact.matches('^[6-9][0-9]{9}$')
+        && d.images is list && d.images.size() <= 3
+        && d.createdAt is number
+        && d.sold == false;
+    }
+
+    match /listings/{listingId} {
+      // Every verified student can browse and see seller contact details.
+      allow read: if isStudent();
+
+      // Anyone verified can post, but only as themselves.
+      allow create: if isStudent()
+        && request.resource.data.sellerId == request.auth.uid
+        && validListing(request.resource.data);
+
+      // The seller can only flip the sold flag.
+      allow update: if isStudent()
+        && resource.data.sellerId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sold'])
+        && request.resource.data.sold is bool;
+
+      // The seller can delete their own listing.
+      allow delete: if isStudent()
+        && resource.data.sellerId == request.auth.uid;
+    }
+  }
+}
