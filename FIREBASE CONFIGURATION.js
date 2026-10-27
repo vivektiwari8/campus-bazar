@@ -12,10 +12,9 @@ window.CAMPUS_CONFIG = {
   // Copy these four values from Firebase console > Project settings > Your apps.
   // The apiKey is not a secret. Firestore rules decide who can read and write.
   firebase: {
-    apiKey: "PASTE_NEW_API_KEY",
+    apiKey: "AIzaSyC3FwkuGuRxWkOqZCDGpr-j3U-MZG0E2vw",
     authDomain: "campus-bazar-new.firebaseapp.com",
     projectId: "campus-bazar-new",
-    appId: "PASTE_NEW_APP_ID"
-  }
+    appId: "1:444075652495:web:26c6952accd152a832c7fa"
   }
 };
